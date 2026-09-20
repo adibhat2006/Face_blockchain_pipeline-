@@ -76,3 +76,27 @@ def record_verification_on_chain(image_hash: str, match_count: int, top_score: i
         raise TimeoutError(f"Web3 transaction receipt timed out or failed: {str(e)}")
 
     return tx_hash_hex
+
+
+def verify_face_record(image_hash: str):
+    """
+    Verifies if a given image hash exists in the smart contract ledger.
+    """
+    if not CONTRACT_ADDRESS:
+        return {"verified": False, "error": "Missing CONTRACT_ADDRESS"}
+
+    w3 = get_web3_instance()
+    if not w3.is_connected():
+        return {"verified": False, "error": "Blockchain node unreachable"}
+
+    try:
+        contract = get_contract(w3)
+        record = contract.functions.getRecord(image_hash).call()
+        return {
+            "verified": record[0] != 0,
+            "timestamp": record[0],
+            "match_count": record[1],
+            "top_score": record[2]
+        }
+    except Exception as e:
+        return {"verified": False, "error": str(e)}
