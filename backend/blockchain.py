@@ -63,5 +63,16 @@ def record_verification_on_chain(image_hash: str, match_count: int, top_score: i
     signed_tx = w3.eth.account.sign_transaction(transaction, private_key=PRIVATE_KEY)
 
     # Broadcast transaction
+   # Broadcast transaction
     tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
-    return w3.to_hex(tx_hash)
+    tx_hash_hex = w3.to_hex(tx_hash)
+
+    # Wait for receipt with timeout and status validation
+    try:
+        tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        if tx_receipt.get("status") != 1:
+            raise RuntimeError(f"Transaction reverted on-chain: {tx_hash_hex}")
+    except Exception as e:
+        raise TimeoutError(f"Web3 transaction receipt timed out or failed: {str(e)}")
+
+    return tx_hash_hex
