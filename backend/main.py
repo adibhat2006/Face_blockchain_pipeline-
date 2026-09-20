@@ -1293,19 +1293,45 @@ async def investigate(
     file: UploadFile = File(...),
 ):
 
-    # --------------------------------------------------------
-    # READ IMAGE
-    # --------------------------------------------------------
+   # -----------------------------------------------------------------
+    # 1. VALIDATE FILE TYPE & EMPTY CHECK
+    # -----------------------------------------------------------------
+    allowed_types = ["image/jpeg", "image/png", "image/jpg", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file format: '{file.content_type}'. Please upload a valid JPEG or PNG image.",
+        )
 
     contents = await file.read()
-    blockchain_result = process_blockchain_record(contents)
-
     if not contents:
-
         raise HTTPException(
             status_code=400,
             detail="Uploaded file is empty.",
         )
+
+    # -----------------------------------------------------------------
+    # 2. VALIDATE IMAGE DECODING & DETECT FACE PRESENCE
+    # -----------------------------------------------------------------
+    nparr = np.frombuffer(contents, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    if image is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Corrupted image file: unable to decode image.",
+        )
+
+    detected_faces = detect_faces(image)
+    if not detected_faces or len(detected_faces) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No valid face detected in the provided image.",
+        )
+
+    # -----------------------------------------------------------------
+    # 3. RUN BLOCKCHAIN RECORDING (Only after validation passes)
+    # -----------------------------------------------------------------
+    blockchain_result = process_blockchain_record(contents)
 
     # --------------------------------------------------------
     # DECODE
