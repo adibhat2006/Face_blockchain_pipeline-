@@ -1,7 +1,12 @@
-from importlib.resources import contents
 import os
 import io
 import hashlib
+import hmac
+from dotenv import load_dotenv
+
+# Load secret environment variables
+load_dotenv()
+HASH_SALT = os.getenv("HASH_SALT", "facechain_default_secure_salt_2026").encode('utf-8')
 
 import cv2
 import numpy as np
@@ -1090,9 +1095,7 @@ def process_blockchain_record(contents):
         # SHA-256 HASH
         # ----------------------------------------------------
 
-        image_hash = hashlib.sha256(
-            contents
-        ).hexdigest()
+        image_hash = hmac.new(HASH_SALT, contents, hashlib.sha256).hexdigest()
 
         blockchain_result["image_hash"] = (
             image_hash
