@@ -12,7 +12,8 @@ import cv2
 import numpy as np
 import requests
 
-from blockchain import store_face_record, verify_face_record
+from blockchain import record_verification_on_chain, verify_face_record
+store_face_record = record_verification_on_chain
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
